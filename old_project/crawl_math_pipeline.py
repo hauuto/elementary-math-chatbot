@@ -314,7 +314,7 @@ def crawl(links: List[str], output_csv: Path, images_dir: Path, errors_file: Pat
     errors = []
 
     # Mở file một lần duy nhất ở chế độ append
-    with output_csv.open("a", newline="", encoding="utf-8") as f:
+    with output_csv.open("a", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         if not file_exists:
             writer.writeheader()
