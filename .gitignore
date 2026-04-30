@@ -221,3 +221,7 @@ __marimo__/
 
 .idea/
 raw_data
+data_images
+old_projects
+__pycache__/
+node_modules/
