@@ -67,6 +67,13 @@ class DeleteResponse(BaseModel):
     id: int
 
 
+class ImportResponse(BaseModel):
+    added: int
+    updated_existing: int
+    skipped: int
+    warnings: list[str]
+
+
 class BucketCount(BaseModel):
     label: str
     count: int

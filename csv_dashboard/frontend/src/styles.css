@@ -32,8 +32,13 @@ h1 { margin-bottom: 0; font-size: clamp(28px, 4vw, 48px); letter-spacing: -0.04e
 .table-card, .detail-card, .dashboard-card, .record-form { background: rgba(15, 23, 42, 0.86); border: 1px solid rgba(148, 163, 184, .14); border-radius: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.28); }
 .table-card { padding: 20px; min-width: 0; }
 .toolbar, .form-header, .detail-header, .pagination, .filters { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.toolbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .toolbar p { color: #94a3b8; margin-bottom: 0; }
 .filters { margin: 18px 0; flex-wrap: wrap; justify-content: flex-start; }
+.import-panel { margin: 18px 0 10px; padding: 14px; border: 1px solid rgba(148, 163, 184, .14); border-radius: 18px; background: rgba(2, 6, 23, .32); display: grid; grid-template-columns: minmax(180px, 1fr) minmax(160px, .7fr); gap: 12px; align-items: center; }
+.checkbox-field { display: flex; align-items: center; gap: 8px; color: #cbd5e1; }
+.checkbox-field input { width: auto; }
+.form-success { padding: 12px 14px; border-radius: 14px; background: rgba(52, 211, 153, .14); color: #bbf7d0; border: 1px solid rgba(52, 211, 153, .24); }
 input, select, textarea { width: 100%; border: 1px solid rgba(148, 163, 184, .22); background: rgba(2, 6, 23, .72); color: #e2e8f0; border-radius: 12px; padding: 11px 12px; outline: none; }
 .filters input { max-width: 380px; }
 .filters select { max-width: 170px; }
@@ -88,7 +93,8 @@ tbody tr:hover, tbody tr.selected { background: rgba(59, 130, 246, .11); }
 @media (max-width: 720px) {
   .main-panel, .sidebar { padding: 18px; }
   .topbar, .toolbar, .form-header { align-items: flex-start; flex-direction: column; }
-  .topbar-actions { justify-content: flex-start; }
+  .topbar-actions, .toolbar-actions { justify-content: flex-start; }
+  .import-panel { grid-template-columns: 1fr; }
   .dashboard-grid, .form-grid { grid-template-columns: 1fr; }
   .chart-card, .chart-card.wide { grid-column: span 1; }
 }

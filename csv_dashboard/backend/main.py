@@ -1,12 +1,16 @@
-from fastapi import FastAPI, HTTPException, Query
+from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile
+
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .analytics import get_overview, get_quality_issues, get_quality_stats
 from .config import CSV_PATH, IMAGE_DIR
 from .csv_store import create_record, delete_record, get_record, query_records, update_record
-from .schemas import DeleteResponse, RecordCreate, RecordUpdate
+from .importer import import_parquet_file
+from .schemas import DeleteResponse, ImportResponse, RecordCreate, RecordUpdate
 
 app = FastAPI(title="Elementary Math Data Warehouse API")
 
@@ -36,6 +40,39 @@ def download_csv():
     if not CSV_PATH.exists():
         raise HTTPException(status_code=404, detail="CSV file not found")
     return FileResponse(CSV_PATH, media_type="text/csv", filename=CSV_PATH.name)
+
+
+@app.get("/api/export/zip")
+def export_zip():
+    buffer = BytesIO()
+    with ZipFile(buffer, "w", ZIP_DEFLATED) as archive:
+        if CSV_PATH.exists():
+            archive.write(CSV_PATH, CSV_PATH.name)
+        if IMAGE_DIR.exists():
+            for image_path in IMAGE_DIR.rglob("*"):
+                if image_path.is_file():
+                    archive.write(image_path, image_path.relative_to(IMAGE_DIR.parent).as_posix())
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="math_dataset_export.zip"'},
+    )
+
+
+@app.post("/api/import/parquet", response_model=ImportResponse)
+async def import_parquet(
+    file: UploadFile = File(...),
+    split_origin: str = Form("parquet_upload"),
+    translate: bool = Form(True),
+    fill_missing: bool = Form(False),
+):
+    if not file.filename or not file.filename.lower().endswith(".parquet"):
+        raise HTTPException(status_code=400, detail="Vui lòng tải lên file .parquet")
+    try:
+        return import_parquet_file(await file.read(), file.filename, split_origin, translate, fill_missing)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.get("/api/records")

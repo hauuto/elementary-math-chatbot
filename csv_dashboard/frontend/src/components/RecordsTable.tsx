@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createRecord, deleteRecord, getRecords, RecordItem, RecordPayload, updateRecord } from '../api/client';
+import { createRecord, deleteRecord, exportZipUrl, getRecords, importParquet, RecordItem, RecordPayload, updateRecord } from '../api/client';
 import { RecordDetail } from './RecordDetail';
 import { RecordForm } from './RecordForm';
 
@@ -15,7 +15,13 @@ export function RecordsTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState('');
+  const [importMessage, setImportMessage] = useState('');
+  const [parquetFile, setParquetFile] = useState<File | null>(null);
+  const [splitOrigin, setSplitOrigin] = useState('parquet_upload');
+  const [translate, setTranslate] = useState(true);
+  const [fillMissing, setFillMissing] = useState(false);
 
   async function loadRecords() {
     setLoading(true);
@@ -66,6 +72,28 @@ export function RecordsTable() {
     await loadRecords();
   }
 
+  async function submitParquetImport() {
+    if (!parquetFile) {
+      setError('Vui lòng chọn file .parquet');
+      return;
+    }
+
+    setImporting(true);
+    setError('');
+    setImportMessage('');
+    try {
+      const result = await importParquet(parquetFile, { splitOrigin, translate, fillMissing });
+      const warningText = result.warnings.length ? ` Cảnh báo: ${result.warnings.join('; ')}` : '';
+      setImportMessage(`Đã thêm ${result.added} dòng, cập nhật ${result.updated_existing} trường thiếu, bỏ qua ${result.skipped} dòng.${warningText}`);
+      setPage(1);
+      await loadRecords();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không import được parquet');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="records-layout">
       <section className="table-card">
@@ -74,8 +102,39 @@ export function RecordsTable() {
             <h2>Records</h2>
             <p>{total.toLocaleString()} dòng dữ liệu</p>
           </div>
-          <button className="primary-button" onClick={() => setShowCreate(true)}>Tạo record</button>
+          <div className="toolbar-actions">
+            <a className="secondary-button" href={exportZipUrl()} download>Tải dataset ZIP</a>
+            <button className="primary-button" onClick={() => setShowCreate(true)}>Tạo record</button>
+          </div>
         </div>
+        <div className="import-panel">
+          <input
+            type="file"
+            accept=".parquet"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              setParquetFile(file);
+              if (file && splitOrigin === 'parquet_upload') setSplitOrigin(file.name.replace(/\.parquet$/i, ''));
+            }}
+          />
+          <input
+            placeholder="split_origin"
+            value={splitOrigin}
+            onChange={(event) => setSplitOrigin(event.target.value)}
+          />
+          <label className="checkbox-field">
+            <input type="checkbox" checked={translate} onChange={(event) => setTranslate(event.target.checked)} />
+            Dịch sang tiếng Việt bằng Gemini
+          </label>
+          <label className="checkbox-field">
+            <input type="checkbox" checked={fillMissing} onChange={(event) => setFillMissing(event.target.checked)} />
+            Điền dữ liệu thiếu hiện có
+          </label>
+          <button className="secondary-button" disabled={importing} onClick={submitParquetImport}>
+            {importing ? 'Đang import...' : 'Import parquet'}
+          </button>
+        </div>
+        {importMessage && <p className="form-success">{importMessage}</p>}
         <div className="filters">
           <input
             placeholder="Tìm theo câu hỏi, answer, choices..."

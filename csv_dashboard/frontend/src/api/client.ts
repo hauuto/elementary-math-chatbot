@@ -50,6 +50,13 @@ export type DataQualityStats = {
   quality_score: number;
 };
 
+export type ImportResponse = {
+  added: number;
+  updated_existing: number;
+  skipped: number;
+  warnings: string[];
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -73,6 +80,25 @@ export function imageUrl(imagePath: string): string {
 
 export function csvDownloadUrl(): string {
   return `${API_BASE_URL}/api/download/csv`;
+}
+
+export function exportZipUrl(): string {
+  return `${API_BASE_URL}/api/export/zip`;
+}
+
+export async function importParquet(file: File, options: { splitOrigin: string; translate: boolean; fillMissing: boolean }) {
+  const formData = new FormData();
+  formData.set('file', file);
+  formData.set('split_origin', options.splitOrigin);
+  formData.set('translate', String(options.translate));
+  formData.set('fill_missing', String(options.fillMissing));
+
+  const response = await fetch(`${API_BASE_URL}/api/import/parquet`, { method: 'POST', body: formData });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Request failed: ${response.status}`);
+  }
+  return response.json() as Promise<ImportResponse>;
 }
 
 export async function getHealth() {
