@@ -1,19 +1,22 @@
 import gradio as gr
-import time
+import asyncio
 import random
 
-def mock_inference(model: str, text: str, has_image: bool) -> tuple[str, str, int]:
+async def mock_inference(model: str, text: str, has_image: bool) -> tuple[str, str, int, bool]:
     """Generates a mock response for frontend testing."""
-    time.sleep(random.uniform(0.5, 1.5))
+    await asyncio.sleep(random.uniform(0.5, 1.5))
     latency = random.randint(500, 1500)
     img_notice = " (Kèm ảnh)" if has_image else ""
+    is_correct = random.choice([True, False])
+    ans_text = "Đáp án đúng" if is_correct else "Đáp án sai"
     return (
         f"Đây là lời giải giả lập từ mô hình {model}{img_notice} cho câu hỏi:\n {text}\n\nBước 1: Giả sử X.\nBước 2: Phân tích tiếp theo.\nVậy kết quả là...",
-        "Đáp án đúng",
-        latency
+        ans_text,
+        latency,
+        is_correct
     )
 
-def chat_fn(message, history, model_choice):
+async def chat_fn(message, history, model_choice):
     """
     Handles chat messages and routes them to the mock inference function.
     Supports multimodal inputs (text + images).
@@ -27,14 +30,28 @@ def chat_fn(message, history, model_choice):
 
     if model_choice == "Compare":
         results = []
-        for m in ["M1", "M2", "M3", "M4"]:
-            sol, ans, lat = mock_inference(m, text, has_image)
-            results.append(f"### {m} ({lat}ms)\n{sol}\n\n**Kết quả:** {ans}")
-        val = "\n---\n".join(results)
+        tasks = [mock_inference(m, text, has_image) for m in ["M1", "M2", "M3", "M4"]]
+        responses = await asyncio.gather(*tasks)
+
+        val = ""
+        for m, (sol, ans, lat, is_correct) in zip(["M1", "M2", "M3", "M4"], responses):
+            color = "green" if is_correct else "red"
+            val += f"""
+<details style="margin-bottom: 10px; border: 1px solid #ccc; padding: 8px; border-radius: 5px;">
+    <summary style="font-weight: bold; cursor: pointer; color: {color};">
+        {m} ({lat}ms) - {ans}
+    </summary>
+    <div style="margin-top: 10px; padding-left: 10px; border-left: 3px solid #eee;">
+        {sol.replace(chr(10), '<br>')}
+        <br><br><b>Kết quả:</b> <span style="color: {color};">{ans}</span>
+    </div>
+</details>
+"""
         return val
     else:
-        sol, ans, lat = mock_inference(model_choice, text, has_image)
-        return f"*(Thời gian xử lý: {lat}ms)*\n\n{sol}\n\n**Kết quả:** {ans}"
+        sol, ans, lat, is_correct = await mock_inference(model_choice, text, has_image)
+        color = "green" if is_correct else "red"
+        return f"*(Thời gian xử lý: {lat}ms)*\n\n{sol}\n\n**Kết quả:** <span style='color: {color};'>{ans}</span>"
 
 with gr.Blocks(title="Vietnamese Math Chatbot", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🧮 Vietnamese Elementary Math Chatbot")
