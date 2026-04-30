@@ -114,24 +114,25 @@ Every sample — whether from ViMathQA, scraped, or synthetic — must follow th
 
 ```json
 {
+  "id": "string — unique identifier (sequential integer from 1 to N)",
   "question": "string — bài toán đề bài",
   "answer": "string — lời giải CoT từng bước",
   "right_choice": "string — đáp số cuối (số thuần túy nếu tự luận, A/B/C/D nếu trắc nghiệm)",
   "choices": ["list — [\"\"] nếu tự luận, danh sách đáp án nếu trắc nghiệm"],
   "instruction": "string — prompt instruction (e.g. 'Hãy từng bước giải quyết bài toán dưới đây:')",
-  "source": "string — một trong: vimathqa | synthetic | manual | scraping",
-  "has_image": "boolean",
-  "image_path": "string | null — đường dẫn tương đối từ project root"
+  "images_path": "string | null — đường dẫn tương đối từ project root",
+  "split_origin": "string | nguồn thu thập dữ liệu (có thể là url)"
+  
 }
 ```
 
 **Schema rules (strictly enforced by QA scripts):**
 - Never add or remove fields outside this schema
+- `id` must be a unique string identifier, ideally a sequential integer as a string (e.g., `"1"`, `"2"`, ..., `"1000"`)
 - `right_choice` for tự luận = the numeric answer only — no units, no Vietnamese text (e.g., `"72"` not `"72 cái kẹp"`)
 - `choices` for tự luận = `[""]` (a list with exactly one empty string) — never `[]` or `null`
 - `source` must be exactly one of: `vimathqa`, `synthetic`, `manual`, `scraping` — no other values, no typos
-- `image_path` must be a relative path from project root, e.g., `data/raw/images/img_001.png`
-- `has_image` must be `true` if and only if `image_path` is non-null
+- `images_path` must be a relative path from project root, e.g., `data_images/[number1]_[number2].png` number1 is the sample id, number2 is a sequential index for multiple images per sample (starting from 1)
 
 ---
 
