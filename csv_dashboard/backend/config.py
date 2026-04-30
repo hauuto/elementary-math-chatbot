@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 DASHBOARD_DIR = Path(__file__).resolve().parents[1]
 ROOT_DIR = DASHBOARD_DIR.parent
+load_dotenv(ROOT_DIR / ".env")
+load_dotenv(DASHBOARD_DIR / ".env")
+
 CSV_PATH = ROOT_DIR / "data_warehouse.csv"
 IMAGE_DIR = ROOT_DIR / "data_images"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
