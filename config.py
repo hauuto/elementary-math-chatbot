@@ -7,7 +7,7 @@ OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
 # Model IDs (HuggingFace hub)
-GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b")
+GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b-it")
 QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-7B")
 
 # Training
