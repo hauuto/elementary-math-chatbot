@@ -1484,7 +1484,7 @@ google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0.dev0", ex
 google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0.dev0"
 proto-plus = [
     {version = ">=1.25.0,<2.0.0.dev0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0.dev0", markers = "python_version < \"3.13\""},
+    {version = ">=1.22.3,<2.0.0.dev0"},
 ]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
 
@@ -1542,7 +1542,7 @@ grpcio-status = [
 ]
 proto-plus = [
     {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0"},
+    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
 ]
 protobuf = ">=4.25.8,<8.0.0"
 requests = ">=2.20.0,<3.0.0"
@@ -2706,7 +2706,7 @@ description = "CUDA profiling tools runtime libs."
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_aarch64.whl", hash = "sha256:796bd679890ee55fb14a94629b698b6db54bcfd833d391d5e94017dd9d7d3151"},
     {file = "nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl", hash = "sha256:4eb01c08e859bf924d222250d2e8f8b8ff6d3db4721288cf35d14252a4d933c8"},
@@ -2720,7 +2720,7 @@ description = "NVRTC native runtime libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:ad9b6d2ead2435f11cbb6868809d2adeeee302e9bb94bcf0539c7a40d80e8575"},
     {file = "nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d27f20a0ca67a4bb34268a5e951033496c5b74870b868bacd046b1b8e0c3267b"},
@@ -2734,7 +2734,7 @@ description = "CUDA Runtime native Libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:ef9bcbe90493a2b9d810e43d249adb3d02e98dd30200d86607d8d02687c43f55"},
     {file = "nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:7f82250d7782aa23b6cfe765ecc7db554bd3c2870c43f3d1821f1d18aebf0548"},
@@ -2765,7 +2765,7 @@ description = "CUFFT native runtime libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cufft-12.0.0.61-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:2708c852ef8cd89d1d2068bdbece0aa188813a0c934db3779b9b1faa8442e5f5"},
     {file = "nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:6c44f692dce8fd5ffd3e3df134b6cdb9c2f72d99cf40b62c32dde45eea9ddad3"},
@@ -2782,7 +2782,7 @@ description = "cuFile GPUDirect libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "sys_platform == \"linux\" and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and sys_platform == \"linux\""
 files = [
     {file = "nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:08a3ecefae5a01c7f5117351c64f17c7c62efa5fffdbe24fc7d298da19cd0b44"},
     {file = "nvidia_cufile-1.15.1.6-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:bdc0deedc61f548bddf7733bdc216456c2fdb101d020e1ab4b88d232d5e2f6d1"},
@@ -2795,7 +2795,7 @@ description = "CURAND native runtime libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:133df5a7509c3e292aaa2b477afd0194f06ce4ea24d714d616ff36439cee349a"},
     {file = "nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:1aee33a5da6e1db083fe2b90082def8915f30f3248d5896bcec36a579d941bfc"},
@@ -2809,7 +2809,7 @@ description = "CUDA solver native runtime libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:02c2457eaa9e39de20f880f4bd8820e6a1cfb9f9a34f820eb12a155aa5bc92d2"},
     {file = "nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:0a759da5dea5c0ea10fd307de75cdeb59e7ea4fcb8add0924859b944babf1112"},
@@ -2828,7 +2828,7 @@ description = "CUSPARSE native runtime libraries"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:80bcc4662f23f1054ee334a15c72b8940402975e0eab63178fc7e670aa59472c"},
     {file = "nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:2b3c89c88d01ee0e477cb7f82ef60a11a4bcd57b6b87c33f789350b59759360b"},
@@ -2872,7 +2872,7 @@ description = "Nvidia JIT LTO Library"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_nvjitlink-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:13a74f429e23b921c1109976abefacc69835f2f433ebd323d3946e11d804e47b"},
     {file = "nvidia_nvjitlink-13.0.88-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:e931536ccc7d467a98ba1d8b89ff7fa7f1fa3b13f2b0069118cd7f47bff07d0c"},
@@ -2899,7 +2899,7 @@ description = "NVIDIA Tools Extension"
 optional = false
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and platform_system == \"Linux\""
+markers = "platform_system == \"Linux\" and (sys_platform == \"linux\" or sys_platform == \"win32\")"
 files = [
     {file = "nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:4936d1d6780fbe68db454f5e72a42ff64d1fd6397df9f363ae786930fd5c1cd4"},
     {file = "nvidia_nvtx-13.0.85-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:cb7780edb6b14107373c835bf8b72e7a178bac7367e23da7acb108f973f157a6"},
@@ -4991,6 +4991,40 @@ tests = ["autopep8", "isort", "llnl-hatchet", "numpy", "pytest", "pytest-forked"
 tutorials = ["matplotlib", "pandas", "tabulate"]
 
 [[package]]
+name = "trl"
+version = "1.3.0"
+description = "Train transformer language models with reinforcement learning."
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "trl-1.3.0-py3-none-any.whl", hash = "sha256:55d5bed9983aa3e781c2d0af3b500ea78706247ae7c1852f76ea80417a3f7d5e"},
+    {file = "trl-1.3.0.tar.gz", hash = "sha256:ad0dfd96cb7e06b41edd913463911b665914e6c37302c8609e8784b6f4e9235c"},
+]
+
+[package.dependencies]
+accelerate = ">=1.4.0"
+datasets = ">=4.7.0"
+jinja2 = "*"
+packaging = ">20.0"
+transformers = ">=4.56.2"
+
+[package.extras]
+bco = ["joblib", "scikit-learn"]
+deepspeed = ["deepspeed (>=0.14.4)", "transformers (!=5.1.0)"]
+dev = ["Pillow", "bitsandbytes", "deepspeed (>=0.14.4)", "hf-doc-builder", "jmespath", "joblib", "kernels", "liger-kernel (>=0.7.0)", "num2words (==0.5.14)", "peft (>=0.8.0)", "pre-commit", "pytest", "pytest-cov", "pytest-datadir (>=1.7.0)", "pytest-rerunfailures (==15.1)", "pytest-xdist", "scikit-learn", "torchvision"]
+kernels = ["kernels"]
+liger = ["liger-kernel (>=0.7.0)"]
+math-verify = ["math-verify (>=0.5.2)"]
+peft = ["peft (>=0.8.0)"]
+quality = ["hf-doc-builder", "pre-commit"]
+quantization = ["bitsandbytes"]
+scikit = ["scikit-learn"]
+test = ["pytest", "pytest-cov", "pytest-datadir (>=1.7.0)", "pytest-rerunfailures (==15.1)", "pytest-xdist"]
+vllm = ["aiohttp (>=3.13.3)", "fastapi", "pydantic", "requests", "uvicorn", "vllm (>=0.12.0,<=0.18.0)"]
+vlm = ["Pillow", "num2words (==0.5.14)", "torchvision"]
+
+[[package]]
 name = "typer"
 version = "0.25.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -5806,4 +5840,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10,<3.15"
-content-hash = "69cf3f539027b16719d253297093a97a6b3716c7feee99f1b2213c5259979d3c"
+content-hash = "78bcaaa963ed9114156ba89e2e8b281ba44331c5cea781b7815f11fa6c0f67cf"
