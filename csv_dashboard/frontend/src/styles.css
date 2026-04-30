@@ -21,6 +21,7 @@ button { cursor: pointer; }
 .nav-tabs button:hover, .nav-tabs button.active { background: rgba(96, 165, 250, 0.14); color: #f8fafc; transform: translateX(4px); }
 .main-panel { padding: 28px; min-width: 0; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+.topbar-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .eyebrow { margin: 0 0 6px; color: #38bdf8; text-transform: uppercase; font-size: 12px; letter-spacing: .16em; }
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(28px, 4vw, 48px); letter-spacing: -0.04em; }
@@ -36,7 +37,7 @@ h1 { margin-bottom: 0; font-size: clamp(28px, 4vw, 48px); letter-spacing: -0.04e
 input, select, textarea { width: 100%; border: 1px solid rgba(148, 163, 184, .22); background: rgba(2, 6, 23, .72); color: #e2e8f0; border-radius: 12px; padding: 11px 12px; outline: none; }
 .filters input { max-width: 380px; }
 .filters select { max-width: 170px; }
-.primary-button, .secondary-button, .ghost-button, .actions button, .pagination button { border: 0; border-radius: 12px; padding: 10px 14px; color: white; background: linear-gradient(135deg, #2563eb, #7c3aed); }
+.primary-button, .secondary-button, .ghost-button, .actions button, .pagination button { border: 0; border-radius: 12px; padding: 10px 14px; color: white; background: linear-gradient(135deg, #2563eb, #7c3aed); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
 .secondary-button, .actions button, .pagination button, .ghost-button { background: rgba(71, 85, 105, .8); }
 .actions .danger { background: rgba(239, 68, 68, .78); }
 button:disabled { opacity: .45; cursor: not-allowed; }
@@ -87,6 +88,7 @@ tbody tr:hover, tbody tr.selected { background: rgba(59, 130, 246, .11); }
 @media (max-width: 720px) {
   .main-panel, .sidebar { padding: 18px; }
   .topbar, .toolbar, .form-header { align-items: flex-start; flex-direction: column; }
+  .topbar-actions { justify-content: flex-start; }
   .dashboard-grid, .form-grid { grid-template-columns: 1fr; }
   .chart-card, .chart-card.wide { grid-column: span 1; }
 }

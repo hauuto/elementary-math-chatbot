@@ -71,6 +71,10 @@ export function imageUrl(imagePath: string): string {
   return `${API_BASE_URL}/images/${filename}`;
 }
 
+export function csvDownloadUrl(): string {
+  return `${API_BASE_URL}/api/download/csv`;
+}
+
 export async function getHealth() {
   return request<{ status: string; csv_exists: boolean; image_dir_exists: boolean }>('/api/health');
 }

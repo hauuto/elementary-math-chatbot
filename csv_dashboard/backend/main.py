@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .analytics import get_overview, get_quality_issues, get_quality_stats
@@ -28,6 +29,13 @@ def health() -> dict[str, bool | str]:
         "csv_exists": CSV_PATH.exists(),
         "image_dir_exists": IMAGE_DIR.exists(),
     }
+
+
+@app.get("/api/download/csv")
+def download_csv():
+    if not CSV_PATH.exists():
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    return FileResponse(CSV_PATH, media_type="text/csv", filename=CSV_PATH.name)
 
 
 @app.get("/api/records")

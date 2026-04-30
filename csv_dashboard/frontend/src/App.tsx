@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getHealth } from './api/client';
+import { csvDownloadUrl, getHealth } from './api/client';
 import { DataQualityCharts } from './components/DataQualityCharts';
 import { DatasetOverviewCharts } from './components/DatasetOverviewCharts';
 import { Layout } from './components/Layout';
@@ -16,7 +16,7 @@ export default function App() {
   }, []);
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab} healthStatus={healthStatus}>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab} healthStatus={healthStatus} csvDownloadUrl={csvDownloadUrl()}>
       {activeTab === 'records' && <RecordsTable />}
       {activeTab === 'overview' && <DatasetOverviewCharts />}
       {activeTab === 'quality' && <DataQualityCharts />}
