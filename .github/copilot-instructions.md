@@ -200,7 +200,7 @@ This pipeline runs after all raw data is collected and before any model training
 |----|------|------|-----------|-------|
 | M1 | LSTM Language Model | From scratch | PyTorch | Text generation, no attention |
 | M2 | Transformer Decoder | From scratch | PyTorch | Standard decoder-only architecture |
-| M3 | Gemma 4 E4B + QLoRA | Fine-tuned | HuggingFace + PEFT | Multimodal — handles image input natively |
+| M3 | Gemma 4 E4B IT + QLoRA | Fine-tuned | HuggingFace + PEFT | Multimodal — handles image input natively |
 | M4 | Qwen2.5-Math-7B + QLoRA | Fine-tuned | HuggingFace + PEFT | Math-specialized, text-only |
 
 **Research question for M3 vs M4:** Trade-off between multimodal capability (M3) and math domain specialization (M4).
@@ -267,7 +267,7 @@ OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
 # Model IDs (HuggingFace hub)
-GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b")
+GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b-it")
 QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-7B")
 
 # Training
