@@ -222,3 +222,6 @@ __marimo__/
 .idea/
 raw_data
 *.csv
+data_images/
+old_projects/
+node_modules/
