@@ -17,37 +17,28 @@ This is an NLP academic project: a Vietnamese chatbot that solves elementary sch
 project/
 ├── pyproject.toml              # Poetry dependency manifest (single source of truth)
 ├── poetry.lock
-├── data/
-│   ├── raw/                    # ViMathQA + scraped data (do not modify)
-│   │   └── images/             # Raw images referenced by dataset samples
-│   ├── synthetic/              # LLM-generated samples (pre-QA)
-│   ├── processed/              # Final cleaned dataset after preprocessing pipeline
-│   │   ├── train.jsonl
-│   │   ├── val.jsonl
-│   │   └── test.jsonl
-│   └── qa/                     # QA reports and logs
-│       └── rejected_log.jsonl
+├── data_warehouse.csv          # Main data source containing all records (CSV format)
+├── data_images/                # All images for the problems (do not modify manually)
 ├── models/
 │   ├── m1_lstm/
-│   │   ├── train.py
+│   │   ├── train.ipynb         # Kaggle training notebook
 │   │   ├── inference.py
 │   │   ├── vocab.py            # Vocabulary builder for M1/M2
 │   │   └── README.md
 │   ├── m2_transformer/
-│   │   ├── train.py
+│   │   ├── train.ipynb         # Kaggle training notebook
 │   │   ├── inference.py
 │   │   ├── vocab.py
 │   │   └── README.md
 │   ├── m3_gemma/
-│   │   ├── train.py
+│   │   ├── train.ipynb         # Kaggle training notebook
 │   │   ├── inference.py
 │   │   └── README.md
 │   └── m4_qwen/
-│       ├── train.py
+│       ├── train.ipynb         # Kaggle training notebook
 │       ├── inference.py
 │       └── README.md
 ├── pipeline/
-│   ├── preprocess.py           # Full preprocessing pipeline (raw → processed)
 │   ├── image_router.py         # OCR + Gemini Vision routing logic
 │   ├── ocr.py                  # PaddleOCR wrapper
 │   └── gemini_vision.py        # Gemini Vision API wrapper
@@ -110,88 +101,24 @@ ipykernel = "*"
 
 ## Data Schema
 
-Every sample — whether from ViMathQA, scraped, or synthetic — must follow this exact schema:
+Tiêu chuẩn dữ liệu được lưu trên cùng 1 file CSV (`data_warehouse.csv`), chứa các cột định dạng như sau:
 
-```json
-{
-  "id": "string — unique identifier (sequential integer from 1 to N)",
-  "question": "string — bài toán đề bài",
-  "answer": "string — lời giải CoT từng bước",
-  "right_choice": "string — đáp số cuối (số thuần túy nếu tự luận, A/B/C/D nếu trắc nghiệm)",
-  "choices": ["list — [\"\"] nếu tự luận, danh sách đáp án nếu trắc nghiệm"],
-  "instruction": "string — prompt instruction (e.g. 'Hãy từng bước giải quyết bài toán dưới đây:')",
-  "images_path": "string | null — đường dẫn tương đối từ project root",
-  "split_origin": "string | nguồn thu thập dữ liệu (có thể là url)"
-  
-}
-```
+| Column | Type | Note |
+| :--- | :--- | :--- |
+| **id** | String | Định danh duy nhất (tuần tự học ngẫu nhiên). |
+| **question** | Text | Chứa nội dung bài tập. |
+| **answer** | Text | Lời giải CoT từng bước. |
+| **right_choice**| String | Đáp án thuần túy (số nếu tự luận, A/B/C/D nếu trắc nghiệm). |
+| **choices** | String | Định dạng list chứa các lựa chọn. VD: `["A. 1", "B. 2"]`. Tự luận để rỗng hoặc `[""]`. |
+| **instruction** | Text | Prompt instruction. |
+| **images_path** | String | Đường dẫn tương đối từ project root (VD: `data_images/image.png`) hoặc rỗng. |
+| **split_origin** | String | Nguồn thu thập dữ liệu (có thể là URL, vimathqa, synthetic, v.v.). |
 
 **Schema rules (strictly enforced by QA scripts):**
-- Never add or remove fields outside this schema
-- `id` must be a unique string identifier, ideally a sequential integer as a string (e.g., `"1"`, `"2"`, ..., `"1000"`)
+- Cấu trúc chung theo format trên. Không được thêm/bớt các cột ngoài ý muốn. Dữ liệu đã được clean nên không có cột split.
 - `right_choice` for tự luận = the numeric answer only — no units, no Vietnamese text (e.g., `"72"` not `"72 cái kẹp"`)
-- `choices` for tự luận = `[""]` (a list with exactly one empty string) — never `[]` or `null`
-- `source` must be exactly one of: `vimathqa`, `synthetic`, `manual`, `scraping` — no other values, no typos
-- `images_path` must be a relative path from project root, e.g., `data_images/[number1]_[number2].png` number1 is the sample id, number2 is a sequential index for multiple images per sample (starting from 1)
-
----
-
-## Data Preprocessing Pipeline (`pipeline/preprocess.py`)
-
-This pipeline runs after all raw data is collected and before any model training. It is the mandatory step that produces the final `data/processed/` splits.
-
-### Pipeline Stages
-
-```
-[Stage 1] Load & Merge
-    ├── Load ViMathQA samples from data/raw/
-    ├── Load scraped/manual samples from data/raw/
-    └── Load synthetic samples from data/synthetic/ (post-generation)
-           ↓
-[Stage 2] Schema Validation
-    ├── Validate all required fields are present with correct types
-    ├── Check source ∈ {vimathqa, synthetic, manual, scraping}
-    ├── Verify has_image ↔ image_path consistency
-    └── Log and discard malformed samples → data/qa/rejected_log.jsonl
-           ↓
-[Stage 3] Text Normalization
-    ├── Normalize Unicode (NFC) for Vietnamese text
-    ├── Strip leading/trailing whitespace from all string fields
-    ├── Normalize right_choice: extract numeric value, remove units and Vietnamese words
-    │   e.g., "72 cái kẹp" → "72", "C. 30,651" → "30,651"
-    └── Validate right_choice is purely numeric (for tự luận) or A/B/C/D (trắc nghiệm)
-           ↓
-[Stage 4] Deduplication
-    ├── Hash question field (after normalization) to detect exact duplicates
-    ├── Optionally: fuzzy dedup using character n-gram similarity (threshold: 0.95)
-    └── Keep first occurrence; log removed duplicates count
-           ↓
-[Stage 5] Test Set Isolation (CRITICAL — run BEFORE synthetic generation to prevent leakage)
-    ├── Reserve a stratified split from ViMathQA ONLY as the held-out test set
-    ├── Extract test set question hashes BEFORE synthetic generation begins
-    ├── At this stage, filter out any synthetic sample whose question hash
-    │   has cosine similarity > 0.85 with any test set question
-    └── Save test hashes to data/processed/test_hashes.txt for reference
-           ↓
-[Stage 6] Train / Val / Test Split
-    ├── Test set: reserved ViMathQA samples (see Stage 5) — ~5% of total
-    ├── Val set: stratified sample from remaining data — ~5% of total
-    └── Train set: all remaining samples
-           ↓
-[Stage 7] Tokenizer Vocab Build (M1 / M2 only)
-    ├── Build character-level or word-level vocabulary from train set ONLY
-    ├── Save vocab to models/m1_lstm/vocab.json and models/m2_transformer/vocab.json
-    └── Vocab must never be built using val or test data
-           ↓
-[Output] Write data/processed/train.jsonl, val.jsonl, test.jsonl
-         Print summary: total samples, split sizes, duplicate count, rejected count
-```
-
-**Implementation rules for `preprocess.py`:**
-- Accept `--input-dir`, `--output-dir`, and `--seed` as CLI arguments (use `argparse`)
-- All stages must be idempotent — safe to re-run
-- Log every stage's start, end, and item count using Python `logging`
-- Stage 5 (test isolation) must log a warning if any synthetic sample is filtered out due to overlap
+- `choices` for tự luận = `[""]` hoặc rỗng
+- `images_path` must be a relative path from project root, e.g., `data_images/[number1]_[number2].png`
 
 ---
 
@@ -201,27 +128,22 @@ This pipeline runs after all raw data is collected and before any model training
 |----|------|------|-----------|-------|
 | M1 | LSTM Language Model | From scratch | PyTorch | Text generation, no attention |
 | M2 | Transformer Decoder | From scratch | PyTorch | Standard decoder-only architecture |
-| M3 | Gemma 4 E4B IT + QLoRA | Fine-tuned | HuggingFace + PEFT | Multimodal — handles image input natively |
+| M3 | Gemma 4 E4B IT + QLoRA | Fine-tuned | HuggingFace + PEFT | Text-only (images processed via OCR/Vision) |
 | M4 | Qwen2.5-Math-7B + QLoRA | Fine-tuned | HuggingFace + PEFT | Math-specialized, text-only |
 
-**Research question for M3 vs M4:** Trade-off between multimodal capability (M3) and math domain specialization (M4).
+**Research question for M3 vs M4:** Trade-off between general instruction capability (M3) and math domain specialization (M4).
 
 ### Common Inference Interface
 
 All 4 models must expose this interface in their respective `inference.py`:
 
 ```python
-from PIL import Image
-from typing import Optional, Union
-
-def generate(prompt: str, image: Optional[Union[str, Image.Image]] = None) -> str:
+def generate(prompt: str) -> str:
     """
     Generate a solution for the given math problem.
 
     Args:
-        prompt: The math problem text (Vietnamese).
-        image: Optional image input. Only M3 (Gemma) uses this parameter.
-                M1, M2, M4 must raise ValueError if image is passed.
+        prompt: The math problem text (Vietnamese) including any text extracted from images.
     Returns:
         The generated solution string (Vietnamese CoT).
     """
@@ -232,7 +154,6 @@ def generate(prompt: str, image: Optional[Union[str, Image.Image]] = None) -> st
 - M1 and M2: pure PyTorch only, no HuggingFace Trainer
 - M1 and M2: must load vocab from their respective `vocab.json` at inference time
 - M3 and M4: always use `peft` with `LoraConfig`, `bitsandbytes` for 4-bit quantization, and `trl.SFTTrainer`
-- M1 and M2: raise `ValueError("Image input not supported for this model")` if `image` is not None
 
 ---
 
@@ -288,33 +209,29 @@ EVAL_RESULTS_DIR: str = os.getenv("EVAL_RESULTS_DIR", "evaluation/results")
 
 ## Image Input Pipeline (`pipeline/image_router.py`)
 
-Three input types, three routing strategies:
+All models process images via the same text-extraction routing strategy:
 
 ```
-Receive image input + model_id
+Receive image input
     ↓
-Is model_id == "m3"?
-    ├── YES → M3 Bypass: return image object directly (no OCR, no Gemini)
+    [Step 1] Run PaddleOCR → get confidence score
+    ↓
+    Confidence >= OCR_CONFIDENCE_THRESHOLD (default 0.85)?
+    ├── YES → Use OCR text output directly → return str
     └── NO  →
-            [Step 1] Run PaddleOCR → get confidence score
+            [Step 2] Call Gemini Vision to classify image type
+            Prompt (Vietnamese):
+            "Ảnh này là hình học/hình khối, hay ảnh bài toán có chữ khó đọc,
+             hay ảnh minh họa bài toán? Hãy trả lời bằng một trong ba loại:
+             'hình học', 'chữ', 'minh họa'."
             ↓
-            Confidence >= OCR_CONFIDENCE_THRESHOLD (default 0.85)?
-            ├── YES → Use OCR text output directly → return str
-            └── NO  →
-                    [Step 2] Call Gemini Vision to classify image type
-                    Prompt (Vietnamese):
-                    "Ảnh này là hình học/hình khối, hay ảnh bài toán có chữ khó đọc,
-                     hay ảnh minh họa bài toán? Hãy trả lời bằng một trong ba loại:
-                     'hình học', 'chữ', 'minh họa'."
-                    ↓
-                    ├── 'hình học' → Gemini describes geometry (dimensions, shapes) → return str
-                    ├── 'chữ'     → Gemini transcribes text from image → return str
-                    └── 'minh họa'→ Gemini describes problem context → return str
+            ├── 'hình học' → Gemini describes geometry (dimensions, shapes) → return str
+            ├── 'chữ'     → Gemini transcribes text from image → return str
+            └── 'minh họa'→ Gemini describes problem context → return str
 ```
 
 **Implementation rules:**
-- Function signature: `def route_image(image: Union[str, Image.Image], model_id: str) -> Union[str, Image.Image]`
-- Return type is `Image.Image` only for M3 bypass; all other paths return `str`
+- Function signature: `def route_image(image: Union[str, Image.Image]) -> str`
 - Wrap all OCR and Gemini calls in `try/except`; on failure, raise a custom `ImageProcessingError` with a descriptive message — never swallow exceptions silently
 - Log confidence score and routing decision at `DEBUG` level
 - All Gemini prompts must be in Vietnamese
@@ -427,35 +344,25 @@ Chỉ trả về một số nguyên từ 1 đến 5. Không giải thích thêm.
 - **Config values:** Always from `config.py` / environment variables — never hardcoded
 - **Logging:** Use Python `logging` module exclusively — never `print()`
 - **Dependency additions:** Always note `# poetry add <package>` at the top of any file that introduces a new dependency
-- **Each model directory** must have its own `train.py`, `inference.py`, and `README.md`
+- **Each model directory** must have its own `train.ipynb`, `inference.py`, and `README.md`
 
 ---
 
 ## Agent Task Hints
 
-When asked to implement a specific component, follow these patterns:
-
-### Data Generation Task (`scripts/generate_synthetic.py`)
-- Read seed questions from `data/raw/`
-- Call Gemini API with batch prompts
-- Validate output against schema before saving
-- Log rejected samples to `data/qa/rejected_log.jsonl`
-- Do NOT generate questions that overlap with test set hashes in `data/processed/test_hashes.txt`
-
-### Preprocessing Task (`pipeline/preprocess.py`)
-- Always run all 7 stages in order
-- Stage 5 (test isolation) must run even if synthetic data has not been generated yet — it pre-computes and saves test hashes
-- Print a final summary: `[Preprocess] Done. Train: N, Val: N, Test: N, Rejected: N, Deduped: N`
-
 ### Training Task
 - Always save checkpoints to `models/{model_id}/checkpoints/`
-- Log training loss to `models/{model_id}/logs/`
+- Log training loss and learning rate, and export these logs to a CSV file (e.g., `models/{model_id}/logs/train_logs.csv`).
 - Save final model to `models/{model_id}/final/`
-- For M1/M2: build vocab from `data/processed/train.jsonl` at the start of training; save to `models/{model_id}/vocab.json`
+- Load the dataset (`data_warehouse.csv`) from the Kaggle input path, e.g., `/kaggle/input/` instead of local project paths when writing Kaggle notebooks.
+- Plot training and evaluation metrics (e.g., loss curves, accuracy curves), and save these figures to be included in the reporting.
+- Export all required files (logs, figures, evaluation results) and zip them into a final report archive for submission.
+- For M1/M2: build vocab from `data_warehouse.csv` at the start of training; save to `models/{model_id}/vocab.json`
 - For M3/M4 on Kaggle T4: always include `gradient_checkpointing=True`, `per_device_train_batch_size=1`, `gradient_accumulation_steps=4`
+- Training code must be written in Kaggle Notebook format (`train.ipynb`). Only text data is used for training.
 
 ### Evaluation Task
-- Load test set from `data/processed/test.jsonl`
+- Load test set from `data_warehouse.csv`
 - Run all 4 models sequentially (memory constraint on single GPU)
 - Save results to `evaluation/results/{model_id}_results.json`
 - Print a summary table at the end
@@ -463,4 +370,4 @@ When asked to implement a specific component, follow these patterns:
 ### Image Pipeline Task
 - Always handle `ImageProcessingError` gracefully — propagate it to the API layer as HTTP 422, never swallow
 - Never crash the API on image processing failure
-- M3 bypass logic must be the first check before any OCR or Gemini call
+
