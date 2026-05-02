@@ -226,3 +226,5 @@ data_images/
 old_projects/
 node_modules/
 .claude
+*.pt
+*.parquet

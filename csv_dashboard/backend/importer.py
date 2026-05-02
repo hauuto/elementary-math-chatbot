@@ -18,7 +18,14 @@ IMAGE_COLUMNS = ("images_path", "image_paths", "image_path", "image")
 FINAL_ANSWER_PATTERN = re.compile(r"####\s*(.+)\s*$", re.MULTILINE)
 
 
-def import_parquet_file(file_content: bytes, filename: str, split_origin: str, translate: bool, fill_missing: bool) -> ImportResponse:
+def import_parquet_file(
+    file_content: bytes,
+    filename: str,
+    split_origin: str,
+    translate: bool,
+    fill_missing: bool,
+    progress: Any | None = None,
+) -> ImportResponse:
     warnings: list[str] = []
     source = split_origin.strip() or Path(filename).stem or "parquet_upload"
 
@@ -61,24 +68,35 @@ def import_parquet_file(file_content: bytes, filename: str, split_origin: str, t
             )
         )
 
-    if translate and new_records:
-        translate_records(new_records)
-
     updated_existing = 0
-    with _WRITE_LOCK:
-        records = read_records()
-        if fill_missing:
-            updated_existing = fill_missing_records(records)
+    added = 0
+    if fill_missing:
+        with _WRITE_LOCK:
+            records = read_records()
+            updated_existing = fill_missing_records(records, progress=progress)
+            if updated_existing:
+                write_records(records)
 
-        current_id = next_id(records)
-        for record in new_records:
-            record["id"] = str(current_id)
-            current_id += 1
-            records.append(record)
+    total_batches = max((len(new_records) + GEMINI_BATCH_SIZE - 1) // GEMINI_BATCH_SIZE, 1)
+    for batch_index, start in enumerate(range(0, len(new_records), GEMINI_BATCH_SIZE), start=1):
+        batch = new_records[start : start + GEMINI_BATCH_SIZE]
+        if translate:
+            translate_batch(batch)
 
-        write_records(records)
+        with _WRITE_LOCK:
+            records = read_records()
+            current_id = next_id(records)
+            for record in batch:
+                record["id"] = str(current_id)
+                current_id += 1
+                records.append(record)
+            write_records(records)
 
-    return ImportResponse(added=len(new_records), updated_existing=updated_existing, skipped=skipped, warnings=warnings)
+        added += len(batch)
+        if progress:
+            progress("IMPORT_BATCH_DONE", batch_index=batch_index, total_batches=total_batches, added=len(batch), total_added=added)
+
+    return ImportResponse(added=added, updated_existing=updated_existing, skipped=skipped, warnings=warnings)
 
 
 def clean_text(value: object) -> str:
@@ -162,31 +180,30 @@ def unique_image_target(filename: str) -> Path:
     return target
 
 
-def translate_records(records: list[dict[str, str]]) -> None:
-    for start in range(0, len(records), GEMINI_BATCH_SIZE):
-        batch = records[start : start + GEMINI_BATCH_SIZE]
-        translated = run_gemini(
-            "Dịch các bản ghi toán tiểu học sau sang tiếng Việt. Giữ nguyên ý nghĩa toán học. "
-            "Trả về JSON array cùng số phần tử, mỗi phần tử có question, answer, instruction.\n"
-            f"{json.dumps([{key: record.get(key, '') for key in ['question', 'answer', 'instruction']} for record in batch], ensure_ascii=False)}"
-        )
-        if not isinstance(translated, list) or len(translated) != len(batch):
+def translate_batch(batch: list[dict[str, str]]) -> None:
+    translated = run_gemini(
+        "Dịch các bản ghi toán tiểu học sau sang tiếng Việt. Giữ nguyên ý nghĩa toán học. "
+        "Trả về JSON array cùng số phần tử, mỗi phần tử có question, answer, instruction.\n"
+        f"{json.dumps([{key: record.get(key, '') for key in ['question', 'answer', 'instruction']} for record in batch], ensure_ascii=False)}"
+    )
+    if not isinstance(translated, list) or len(translated) != len(batch):
+        raise ValueError("Gemini trả về dữ liệu dịch không đúng định dạng.")
+    for record, item in zip(batch, translated):
+        if not isinstance(item, dict):
             raise ValueError("Gemini trả về dữ liệu dịch không đúng định dạng.")
-        for record, item in zip(batch, translated):
-            if not isinstance(item, dict):
-                raise ValueError("Gemini trả về dữ liệu dịch không đúng định dạng.")
-            for field in ("question", "answer", "instruction"):
-                value = clean_text(item.get(field))
-                if value:
-                    record[field] = value
-            if not record.get("right_choice"):
-                record["right_choice"] = extract_right_choice(record.get("answer", ""))
+        for field in ("question", "answer", "instruction"):
+            value = clean_text(item.get(field))
+            if value:
+                record[field] = value
+        if not record.get("right_choice"):
+            record["right_choice"] = extract_right_choice(record.get("answer", ""))
 
 
-def fill_missing_records(records: list[dict[str, str]]) -> int:
+def fill_missing_records(records: list[dict[str, str]], progress: Any | None = None) -> int:
     targets = [record for record in records if needs_fill(record)]
     updated = 0
-    for start in range(0, len(targets), GEMINI_BATCH_SIZE):
+    total_batches = max((len(targets) + GEMINI_BATCH_SIZE - 1) // GEMINI_BATCH_SIZE, 1)
+    for batch_index, start in enumerate(range(0, len(targets), GEMINI_BATCH_SIZE), start=1):
         batch = targets[start : start + GEMINI_BATCH_SIZE]
         filled = run_gemini(
             "Điền các trường còn thiếu cho dataset toán tiểu học bằng tiếng Việt. "
@@ -206,6 +223,8 @@ def fill_missing_records(records: list[dict[str, str]]) -> int:
                 if value:
                     record[field] = value
                     updated += 1
+        if progress:
+            progress("FILL_MISSING_BATCH_DONE", batch_index=batch_index, total_batches=total_batches, updated=updated)
     return updated
 
 
@@ -218,7 +237,10 @@ def run_gemini(prompt: str) -> Any:
 
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
-    response = model.generate_content(prompt)
+    response = model.generate_content(
+        prompt,
+        generation_config={"response_mime_type": "application/json"},
+    )
     return json.loads(clean_gemini_json(response.text))
 
 
@@ -227,4 +249,38 @@ def clean_gemini_json(text: str) -> str:
     if cleaned.startswith("```"):
         cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
         cleaned = re.sub(r"\s*```$", "", cleaned)
-    return cleaned.strip()
+    cleaned = cleaned.strip()
+    extracted = extract_first_json_value(cleaned)
+    return extracted or cleaned
+
+
+def extract_first_json_value(text: str) -> str:
+    start = min((index for index in [text.find("["), text.find("{")] if index != -1), default=-1)
+    if start == -1:
+        return ""
+
+    opening = text[start]
+    closing = "]" if opening == "[" else "}"
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == opening:
+            depth += 1
+        elif char == closing:
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+    return ""
