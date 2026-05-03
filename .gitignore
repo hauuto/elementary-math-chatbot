@@ -151,13 +151,22 @@ activemq-data/
 
 # Environments
 .env
-.envrc
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Heavy Model and Data Checkpoints
+models/**/checkpoints/
+models/**/final/
+models/**/*.bin
+models/**/*.safetensors
+models/**/*.pt
+models/**/*.ckpt
+data_images/
+data_warehouse.csv
 
 # Spyder project settings
 .spyderproject
@@ -225,3 +234,5 @@ raw_data
 data_images/
 old_projects/
 node_modules/
+
+.env
