@@ -9,6 +9,9 @@ OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0
 # API keys
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
+# LM Studio
+LM_STUDIO_URL: str = os.getenv("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
+
 # Colab bridging URL
 COLAB_API_URL: str = os.getenv("COLAB_API_URL", "")
 
