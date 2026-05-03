@@ -1,6 +1,9 @@
 import gradio as gr
 import asyncio
-import random
+import httpx
+import base64
+import yaml
+import os
 
 MODEL_NAMES = {
     "M1": "M1: LSTM",
@@ -23,9 +26,11 @@ async def mock_inference(model: str, text: str, has_image: bool) -> tuple[str, s
         is_correct
     )
 
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+
 async def chat_fn(message, history, model_choice):
     """
-    Handles chat messages and routes them to the mock inference function.
+    Handles chat messages and routes them to the real inference API.
     Supports multimodal inputs (text + images).
     """
     text = message.get("text", "")
@@ -35,33 +40,75 @@ async def chat_fn(message, history, model_choice):
     if not text and not has_image:
         return "Vui lòng nhập câu hỏi hoặc tải lên một hình ảnh."
 
-    if model_choice == "Compare":
-        results = []
-        tasks = [mock_inference(MODEL_NAMES[m], text, has_image) for m in ["M1", "M2", "M3", "M4"]]
-        responses = await asyncio.gather(*tasks)
+    image_b64 = None
+    if has_image:
+        try:
+            with open(files[0], "rb") as f:
+                image_b64 = base64.b64encode(f.read()).decode("utf-8")
+        except Exception as e:
+            return f"Không thể đọc ảnh: {e}"
 
-        val = ""
-        for m, (sol, ans, lat, is_correct) in zip(["M1", "M2", "M3", "M4"], responses):
-            color = "green" if is_correct else "red"
-            model_display_name = MODEL_NAMES[m]
-            val += f"""
+    async with httpx.AsyncClient(timeout=600) as client:
+        if model_choice == "Compare":
+            try:
+                resp = await client.post(
+                    f"{API_URL}/compare",
+                    json={"question": text, "image": image_b64}
+                )
+                if resp.status_code == 422:
+                    return f"Lỗi xử lý ảnh: {resp.json().get('message')}"
+                if resp.status_code != 200:
+                    return f"Lỗi server: {resp.json().get('message')}"
+
+                data = resp.json()["results"]
+                val = ""
+                for res in data:
+                    m = res["model"].upper()
+                    sol = res["solution"]
+                    ans = res["answer"]
+                    lat = res["latency_ms"]
+                    model_display_name = MODEL_NAMES.get(m, m)
+
+                    val += f"""
 <details style="margin-bottom: 10px; border: 1px solid #ccc; padding: 8px; border-radius: 5px;">
-    <summary style="font-weight: bold; cursor: pointer; color: {color};">
+    <summary style="font-weight: bold; cursor: pointer; color: blue;">
         {model_display_name} ({lat}ms) - {ans}
     </summary>
     <div style="margin-top: 10px; padding-left: 10px; border-left: 3px solid #eee;">
         {sol.replace(chr(10), '<br>')}
-        <br><br><b>Kết quả:</b> <span style="color: {color};">{ans}</span>
+        <br><br><b>Kết quả:</b> <span style="color: blue;">{ans}</span>
     </div>
 </details>
 """
-        return val
-    else:
-        # Extract ID if a full name was passed from dropdown
-        model_name = model_choice if model_choice not in MODEL_NAMES else MODEL_NAMES[model_choice]
-        sol, ans, lat, is_correct = await mock_inference(model_name, text, has_image)
-        color = "green" if is_correct else "red"
-        return f"*(Thời gian xử lý: {lat}ms)*\n\n{sol}\n\n**Kết quả:** <span style='color: {color};'>{ans}</span>"
+                return val
+            except Exception as e:
+                return f"Lỗi gọi API: {e}"
+        else:
+            # Extract id
+            m_key = "m4"
+            for k, v in MODEL_NAMES.items():
+                if v == model_choice:
+                    m_key = k.lower()
+                    break
+
+            try:
+                resp = await client.post(
+                    f"{API_URL}/solve",
+                    json={"question": text, "model": m_key, "image": image_b64}
+                )
+                if resp.status_code == 422:
+                    return f"Lỗi xử lý ảnh: {resp.json().get('message')}"
+                if resp.status_code != 200:
+                    return f"Lỗi server: {resp.json().get('message')}"
+
+                data = resp.json()
+                sol = data["solution"]
+                ans = data["answer"]
+                lat = data["latency_ms"]
+
+                return f"*(Thời gian xử lý: {lat}ms)*\n\n{sol}\n\n**Kết quả:** <span style='color: blue;'>{ans}</span>"
+            except Exception as e:
+                return f"Lỗi gọi API: {e}"
 
 with gr.Blocks(title="Vietnamese Math Chatbot", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🧮 Vietnamese Elementary Math Chatbot")

@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv(encoding="utf-8-sig")
 
 # Image pipeline
 OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0.85"))
@@ -7,9 +10,15 @@ OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL_ID: str = os.getenv("GEMINI_MODEL_ID", os.getenv("GEMINI_MODEL", "gemini-2.0-flash"))
 
+# LM Studio
+LM_STUDIO_URL: str = os.getenv("LM_STUDIO_URL", "http://localhost:1234/v1/chat/completions")
+
+# Colab bridging URL
+COLAB_API_URL: str = os.getenv("COLAB_API_URL", "")
+
 # Model IDs (HuggingFace hub)
-GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b-it")
-QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-7B")
+GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e2b-it")
+QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-1.5B")
 
 # Training
 QLORA_R: int = int(os.getenv("QLORA_R", "16"))

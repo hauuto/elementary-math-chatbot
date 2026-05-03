@@ -128,8 +128,8 @@ Tiêu chuẩn dữ liệu được lưu trên cùng 1 file CSV (`data_warehouse.
 |----|------|------|-----------|-------|
 | M1 | LSTM Language Model | From scratch | PyTorch | Text generation, no attention |
 | M2 | Transformer Decoder | From scratch | PyTorch | Standard decoder-only architecture |
-| M3 | Gemma 4 E4B IT + QLoRA | Fine-tuned | HuggingFace + PEFT | Text-only (images processed via OCR/Vision) |
-| M4 | Qwen2.5-Math-7B + QLoRA | Fine-tuned | HuggingFace + PEFT | Math-specialized, text-only |
+| M3 | Gemma 4 E2B IT + QLoRA | Fine-tuned | HuggingFace + PEFT | Text-only (images processed via OCR/Vision) |
+| M4 | Qwen2.5-Math-1.5B + QLoRA | Fine-tuned | HuggingFace + PEFT | Math-specialized, text-only |
 
 **Research question for M3 vs M4:** Trade-off between general instruction capability (M3) and math domain specialization (M4).
 
@@ -189,8 +189,8 @@ OCR_CONFIDENCE_THRESHOLD: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
 # Model IDs (HuggingFace hub)
-GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e4b-it")
-QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-7B")
+GEMMA_MODEL_ID: str = os.getenv("GEMMA_MODEL_ID", "google/gemma-4-e2b-it")
+QWEN_MODEL_ID: str = os.getenv("QWEN_MODEL_ID", "Qwen/Qwen2.5-Math-1.5B")
 
 # Training
 QLORA_R: int = int(os.getenv("QLORA_R", "16"))
